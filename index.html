@@ -1,1 +1,3435 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width,initial-scale=1.0,user-scalable=no,viewport-fit=cover">
 
+<title>GUERRA MEDIEVAL — Cavaleiros</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    user-select:none;
+    -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
+}
+
+html,body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#526044;
+    color:#fff;
+    font-family:"Segoe UI",Tahoma,sans-serif;
+    touch-action:none;
+}
+
+body{
+    position:fixed;
+    inset:0;
+}
+
+#canvas-container{
+    position:fixed;
+    inset:0;
+    width:100vw;
+    height:100dvh;
+    overflow:hidden;
+}
+
+canvas{
+    display:block;
+    width:100%;
+    height:100%;
+}
+
+/* =========================================================
+   TELAS
+   ========================================================= */
+
+.screen{
+    position:fixed;
+    inset:0;
+    z-index:50;
+
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+
+    text-align:center;
+
+    padding:20px;
+
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(87,72,45,.92),
+            rgba(25,23,18,.97)
+        );
+}
+
+h1{
+    color:#d9b75b;
+    font-size:clamp(1.5rem,5vw,3rem);
+    margin-bottom:10px;
+    text-transform:uppercase;
+    letter-spacing:3px;
+    text-shadow:3px 3px 8px #000;
+}
+
+p{
+    color:#ddd;
+    margin-bottom:18px;
+    font-size:clamp(.85rem,2.5vw,1.05rem);
+}
+
+.subtitle{
+    color:#bca56b;
+    margin-bottom:24px;
+    font-size:14px;
+}
+
+.btn{
+    background:
+        linear-gradient(
+            180deg,
+            #806b3d,
+            #4c3c20
+        );
+
+    color:#fff;
+
+    border:1px solid #c6ad6b;
+
+    padding:13px 22px;
+
+    margin:5px;
+
+    font-size:14px;
+
+    cursor:pointer;
+
+    border-radius:6px;
+
+    font-weight:bold;
+
+    width:min(300px,90vw);
+
+    text-transform:uppercase;
+
+    letter-spacing:1px;
+
+    box-shadow:
+        0 4px 12px rgba(0,0,0,.55);
+}
+
+.btn:hover{
+    background:#927a45;
+    border-color:#fff;
+}
+
+.btn:active{
+    transform:scale(.97);
+}
+
+.nation-btn{
+    position:relative;
+    overflow:hidden;
+}
+
+.nation-btn small{
+    display:block;
+    color:#ddd;
+    font-size:9px;
+    margin-top:3px;
+}
+
+/* =========================================================
+   HUD
+   ========================================================= */
+
+#hud{
+    position:fixed;
+
+    top:max(7px,env(safe-area-inset-top));
+    left:7px;
+    right:7px;
+
+    z-index:10;
+
+    pointer-events:none;
+
+    display:none;
+
+    justify-content:space-between;
+    align-items:center;
+
+    gap:3px;
+
+    padding:8px 10px;
+
+    background:rgba(20,17,12,.72);
+
+    border:
+        1px solid
+        rgba(255,255,255,.18);
+
+    border-radius:9px;
+
+    backdrop-filter:blur(5px);
+
+    text-shadow:
+        2px 2px 4px #000;
+}
+
+.hud-card{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    min-width:55px;
+}
+
+.hud-title{
+    color:#aaa;
+    font-size:9px;
+    text-transform:uppercase;
+}
+
+.hud-value{
+    color:#e1bf5c;
+    font-size:14px;
+    font-weight:bold;
+}
+
+#ui-health{
+    color:#62d66f;
+}
+
+#ui-shield{
+    color:#70b9e9;
+}
+
+#ui-stamina{
+    color:#d5c15c;
+}
+
+#ui-ammo{
+    color:#e4a34b;
+}
+
+#ui-enemies{
+    color:#ef7474;
+}
+
+/* =========================================================
+   CROSSHAIR
+   ========================================================= */
+
+#crosshair{
+    position:fixed;
+
+    top:50%;
+    left:50%;
+
+    width:22px;
+    height:22px;
+
+    transform:translate(-50%,-50%);
+
+    pointer-events:none;
+
+    z-index:8;
+}
+
+#crosshair::before,
+#crosshair::after{
+    content:"";
+
+    position:absolute;
+
+    background:rgba(255,245,200,.9);
+
+    box-shadow:
+        0 0 4px #000;
+}
+
+#crosshair::before{
+    top:10px;
+    left:0;
+    width:22px;
+    height:2px;
+}
+
+#crosshair::after{
+    top:0;
+    left:10px;
+    width:2px;
+    height:22px;
+}
+
+/* =========================================================
+   MENSAGENS
+   ========================================================= */
+
+#message-indicator{
+    position:fixed;
+
+    top:67%;
+    left:50%;
+
+    transform:translateX(-50%);
+
+    z-index:12;
+
+    pointer-events:none;
+
+    text-align:center;
+
+    text-shadow:
+        2px 2px 5px #000;
+
+    color:#e0bd45;
+
+    font-weight:bold;
+
+    font-size:18px;
+
+    opacity:0;
+
+    transition:opacity .2s;
+}
+
+#attack-indicator{
+    position:fixed;
+
+    bottom:22%;
+
+    left:50%;
+
+    transform:translateX(-50%);
+
+    color:#f0ce66;
+
+    font-weight:bold;
+
+    font-size:17px;
+
+    text-shadow:
+        2px 2px 5px #000;
+
+    display:none;
+
+    pointer-events:none;
+}
+
+/* =========================================================
+   CONTROLES MOBILE
+   ========================================================= */
+
+#touch-joystick{
+    position:fixed;
+
+    bottom:max(18px,env(safe-area-inset-bottom));
+    left:18px;
+
+    width:120px;
+    height:120px;
+
+    background:rgba(255,255,255,.07);
+
+    border:
+        2px solid
+        rgba(255,255,255,.25);
+
+    border-radius:50%;
+
+    z-index:20;
+
+    touch-action:none;
+
+    display:none;
+}
+
+#stick{
+    position:absolute;
+
+    width:50px;
+    height:50px;
+
+    left:33px;
+    top:33px;
+
+    background:rgba(198,160,66,.7);
+
+    border:
+        1px solid
+        rgba(255,255,255,.5);
+
+    border-radius:50%;
+
+    pointer-events:none;
+}
+
+#weapon-buttons{
+    position:fixed;
+
+    right:12px;
+
+    bottom:max(12px,env(safe-area-inset-bottom));
+
+    z-index:20;
+
+    display:none;
+
+    flex-direction:column;
+
+    align-items:flex-end;
+
+    gap:6px;
+}
+
+.weapon-row,
+.action-row{
+    display:flex;
+
+    gap:5px;
+
+    flex-wrap:wrap;
+
+    justify-content:flex-end;
+}
+
+.weapon-select-btn{
+    width:auto;
+
+    min-width:62px;
+
+    padding:7px 5px;
+
+    margin:0;
+
+    font-size:8px;
+}
+
+.action-btn{
+    width:62px;
+    height:62px;
+
+    border-radius:50%;
+
+    display:flex;
+
+    align-items:center;
+    justify-content:center;
+
+    color:#fff;
+
+    font-weight:bold;
+
+    font-size:9px;
+
+    border:
+        2px solid #fff;
+
+    box-shadow:
+        0 4px 10px rgba(0,0,0,.6);
+
+    cursor:pointer;
+
+    touch-action:manipulation;
+}
+
+.action-btn.red{
+    background:
+        radial-gradient(
+            circle,
+            #aa3838,
+            #5d1717
+        );
+}
+
+.action-btn.gold{
+    background:
+        radial-gradient(
+            circle,
+            #b08b2f,
+            #5d480d
+        );
+}
+
+.action-btn.blue{
+    background:
+        radial-gradient(
+            circle,
+            #4d88b2,
+            #203f56
+        );
+}
+
+.action-btn.green{
+    background:
+        radial-gradient(
+            circle,
+            #648b42,
+            #29401d
+        );
+}
+
+/* =========================================================
+   LEGENDA
+   ========================================================= */
+
+.legend{
+    margin-top:18px;
+
+    color:#aaa;
+
+    font-size:11px;
+
+    line-height:1.7;
+
+    max-width:650px;
+}
+
+.legend b{
+    color:#d7bc68;
+}
+
+#kingdom-display{
+    color:#e2c46a;
+    font-size:12px;
+    margin-top:5px;
+}
+
+/* =========================================================
+   RESPONSIVIDADE
+   ========================================================= */
+
+@media(max-width:900px){
+
+    #hud{
+        gap:1px;
+        padding:7px 4px;
+    }
+
+    .hud-card{
+        min-width:43px;
+    }
+
+    .hud-title{
+        font-size:7px;
+    }
+
+    .hud-value{
+        font-size:10px;
+    }
+}
+
+@media(max-width:600px){
+
+    #hud{
+        top:3px;
+        left:2px;
+        right:2px;
+        padding:5px 2px;
+        border-radius:6px;
+    }
+
+    .hud-card{
+        min-width:35px;
+    }
+
+    .hud-title{
+        font-size:5.5px;
+    }
+
+    .hud-value{
+        font-size:8px;
+    }
+
+    #crosshair{
+        width:16px;
+        height:16px;
+    }
+
+    #crosshair::before{
+        top:7px;
+        width:16px;
+    }
+
+    #crosshair::after{
+        left:7px;
+        height:16px;
+    }
+
+    #touch-joystick{
+        width:105px;
+        height:105px;
+
+        left:12px;
+        bottom:12px;
+    }
+
+    #stick{
+        width:44px;
+        height:44px;
+
+        left:28px;
+        top:28px;
+    }
+
+    #weapon-buttons{
+        right:7px;
+        bottom:7px;
+        max-width:58vw;
+    }
+
+    .weapon-select-btn{
+        min-width:48px;
+        font-size:6.5px;
+    }
+
+    .action-btn{
+        width:52px;
+        height:52px;
+        font-size:7px;
+    }
+}
+
+@media(pointer:fine){
+
+    #touch-joystick,
+    #weapon-buttons{
+        display:none!important;
+    }
+}
+
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+</head>
+
+<body>
+
+<div id="canvas-container"></div>
+
+<div id="crosshair"></div>
+
+<!-- ========================================================
+     HUD
+========================================================= -->
+
+<div id="hud">
+
+    <div class="hud-card">
+        <span class="hud-title">Batalha</span>
+        <span class="hud-value" id="ui-level">1/12</span>
+    </div>
+
+    <div class="hud-card">
+        <span class="hud-title">Reino</span>
+        <span class="hud-value" id="ui-kingdom">França</span>
+    </div>
+
+    <div class="hud-card">
+        <span class="hud-title">Vida</span>
+        <span class="hud-value" id="ui-health">100</span>
+    </div>
+
+    <div class="hud-card">
+        <span class="hud-title">Escudo</span>
+        <span class="hud-value" id="ui-shield">25</span>
+    </div>
+
+    <div class="hud-card">
+        <span class="hud-title">Stamina</span>
+        <span class="hud-value" id="ui-stamina">100</span>
+    </div>
+
+    <div class="hud-card">
+        <span class="hud-title">Arma</span>
+        <span class="hud-value" id="ui-weapon">Espada</span>
+    </div>
+
+    <div class="hud-card">
+        <span class="hud-title">Flechas</span>
+        <span class="hud-value" id="ui-ammo">30</span>
+    </div>
+
+    <div class="hud-card">
+        <span class="hud-title">Inimigos</span>
+        <span class="hud-value" id="ui-enemies">0</span>
+    </div>
+
+</div>
+
+<div id="message-indicator"></div>
+
+<div id="attack-indicator">
+    ATAQUE!
+</div>
+
+<!-- ========================================================
+     MENU
+========================================================= -->
+
+<div id="menu-screen" class="screen">
+
+    <h1>GUERRA MEDIEVAL</h1>
+
+    <div class="subtitle">
+        A Batalha dos Quatro Reinos
+    </div>
+
+    <p>
+        Escolha seu reino e lute como um cavaleiro.
+    </p>
+
+    <button class="btn nation-btn"
+            onclick="selectNation('FRA')">
+        🇫🇷 FRANÇA
+        <small>Exército Francês</small>
+    </button>
+
+    <button class="btn nation-btn"
+            onclick="selectNation('ENG')">
+        🏴 INGLATERRA
+        <small>Exército Inglês</small>
+    </button>
+
+    <button class="btn nation-btn"
+            onclick="selectNation('POR')">
+        🇵🇹 PORTUGAL
+        <small>Exército Português</small>
+    </button>
+
+    <button class="btn nation-btn"
+            onclick="selectNation('ESP')">
+        🇪🇸 ESPANHA
+        <small>Exército Espanhol</small>
+    </button>
+
+    <div class="legend">
+
+        <b>PC:</b>
+        WASD movimentar · Mouse mirar ·
+        Clique atacar · Shift correr
+
+        <br>
+
+        <b>1:</b> Espada ·
+        <b>2:</b> Lança ·
+        <b>3:</b> Arco
+
+        <br>
+
+        <b>R:</b> preparar flecha ·
+        <b>E:</b> ataque forte
+
+        <br>
+
+        <b>Celular:</b>
+        joystick para movimentar e botões para atacar.
+
+    </div>
+
+</div>
+
+<!-- ========================================================
+     FIM DE JOGO
+========================================================= -->
+
+<div id="end-screen"
+     class="screen"
+     style="display:none">
+
+    <h1 id="end-title">
+        Fim da Batalha
+    </h1>
+
+    <p id="end-description"></p>
+
+    <button class="btn"
+            onclick="restartGame()">
+        Jogar Novamente
+    </button>
+
+</div>
+
+<!-- ========================================================
+     CONTROLES MOBILE
+========================================================= -->
+
+<div id="touch-joystick">
+
+    <div id="stick"></div>
+
+</div>
+
+<div id="weapon-buttons">
+
+    <div class="weapon-row">
+
+        <button class="btn weapon-select-btn"
+                onclick="setWeapon(1)">
+            1<br>ESPADA
+        </button>
+
+        <button class="btn weapon-select-btn"
+                onclick="setWeapon(2)">
+            2<br>LANÇA
+        </button>
+
+        <button class="btn weapon-select-btn"
+                onclick="setWeapon(3)">
+            3<br>ARCO
+        </button>
+
+    </div>
+
+    <div class="action-row">
+
+        <button class="action-btn red"
+                id="btn-attack">
+            ESPADA
+        </button>
+
+        <button class="action-btn gold"
+                id="btn-heavy">
+            ATAQUE<br>FORTE
+        </button>
+
+        <button class="action-btn blue"
+                id="btn-shield">
+            ESCUDO
+        </button>
+
+        <button class="action-btn green"
+                id="btn-bow">
+            ARCO
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+
+/* ============================================================
+   ESTADO GLOBAL
+============================================================ */
+
+let scene;
+let camera;
+let renderer;
+
+let playerWeaponGroup;
+
+let enemies=[];
+let scenery=[];
+let particles=[];
+let projectiles=[];
+
+let level=1;
+
+let isGameRunning=false;
+
+let lastTime=performance.now();
+
+let weaponBob=0;
+
+let recoil=0;
+
+let joystickMove={
+    x:0,
+    y:0
+};
+
+const keys={};
+
+
+/* ============================================================
+   JOGADOR
+============================================================ */
+
+const player={
+
+    nation:'FRA',
+
+    health:100,
+
+    maxHealth:100,
+
+    shield:25,
+
+    maxShield:25,
+
+    stamina:100,
+
+    weapon:1,
+
+    arrows:30,
+
+    lastAttack:0,
+
+    attacking:false
+};
+
+
+/* ============================================================
+   REINOS
+============================================================ */
+
+const kingdoms={
+
+    FRA:{
+        name:'França',
+
+        uniform:0x244c91,
+
+        armor:0x8d98a6,
+
+        cape:0x253c91,
+
+        accent:0xc7a53d,
+
+        flag1:0x1c3d91,
+
+        flag2:0xffffff,
+
+        flag3:0xb52d35
+    },
+
+    ENG:{
+        name:'Inglaterra',
+
+        uniform:0x5a2226,
+
+        armor:0x858585,
+
+        cape:0x7a2027,
+
+        accent:0xd2b45a,
+
+        flag1:0xb52b35,
+
+        flag2:0xffffff,
+
+        flag3:0xb52b35
+    },
+
+    POR:{
+        name:'Portugal',
+
+        uniform:0x126d46,
+
+        armor:0x9a9a9a,
+
+        cape:0x176c43,
+
+        accent:0xd4af37,
+
+        flag1:0x08783e,
+
+        flag2:0xd51f2c,
+
+        flag3:0xd51f2c
+    },
+
+    ESP:{
+        name:'Espanha',
+
+        uniform:0x8d2723,
+
+        armor:0x969696,
+
+        cape:0x982b26,
+
+        accent:0xe0bd46,
+
+        flag1:0xc92d31,
+
+        flag2:0xf1c644,
+
+        flag3:0xc92d31
+    }
+
+};
+
+
+/* ============================================================
+   ARMAS
+============================================================ */
+
+const weapons={
+
+    1:{
+
+        name:'Espada',
+
+        damage:38,
+
+        strongDamage:75,
+
+        range:3.2,
+
+        cooldown:520,
+
+        stamina:8,
+
+        melee:true
+    },
+
+    2:{
+
+        name:'Lança',
+
+        damage:52,
+
+        strongDamage:90,
+
+        range:4.5,
+
+        cooldown:800,
+
+        stamina:12,
+
+        melee:true
+    },
+
+    3:{
+
+        name:'Arco',
+
+        damage:48,
+
+        strongDamage:80,
+
+        range:100,
+
+        cooldown:750,
+
+        stamina:5,
+
+        projectile:true
+    }
+
+};
+
+
+/* ============================================================
+   ÁUDIO
+============================================================ */
+
+let audioCtx;
+
+function initAudio(){
+
+    if(!audioCtx){
+
+        audioCtx=
+            new(
+                window.AudioContext||
+                window.webkitAudioContext
+            )();
+    }
+
+    if(audioCtx.state==='suspended')
+        audioCtx.resume();
+}
+
+function sound(type){
+
+    initAudio();
+
+    const osc=
+        audioCtx.createOscillator();
+
+    const gain=
+        audioCtx.createGain();
+
+    osc.connect(gain);
+
+    gain.connect(
+        audioCtx.destination
+    );
+
+    const data={
+
+        sword:[220,70,.15,.25],
+
+        hit:[100,45,.13,.25],
+
+        bow:[500,180,.18,.18],
+
+        shield:[300,80,.2,.2],
+
+        pickup:[500,900,.18,.12],
+
+        death:[180,50,.45,.25],
+
+        victory:[400,900,.7,.18]
+    };
+
+    const d=
+        data[type]||
+        data.hit;
+
+    osc.type=
+        type==='bow'
+        ?'triangle'
+        :'sawtooth';
+
+    const now=
+        audioCtx.currentTime;
+
+    osc.frequency.setValueAtTime(
+        d[0],
+        now
+    );
+
+    osc.frequency.exponentialRampToValueAtTime(
+        d[1],
+        now+d[2]
+    );
+
+    gain.gain.setValueAtTime(
+        d[3],
+        now
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+        .001,
+        now+d[2]
+    );
+
+    osc.start(now);
+
+    osc.stop(
+        now+d[2]
+    );
+}
+
+
+/* ============================================================
+   MENSAGENS
+============================================================ */
+
+function showMessage(
+    text,
+    color='#e2c15c'
+){
+
+    const el=
+        document.getElementById(
+            'message-indicator'
+        );
+
+    el.innerText=text;
+
+    el.style.color=color;
+
+    el.style.opacity='1';
+
+    clearTimeout(
+        showMessage.timer
+    );
+
+    showMessage.timer=
+        setTimeout(()=>{
+
+            el.style.opacity='0';
+
+        },1500);
+}
+
+
+/* ============================================================
+   MODELO DA ESPADA
+============================================================ */
+
+function createSword(){
+
+    const group=
+        new THREE.Group();
+
+    const metal=
+        new THREE.MeshStandardMaterial({
+
+            color:0xc7cbd0,
+
+            metalness:.85,
+
+            roughness:.25
+        });
+
+    const gold=
+        new THREE.MeshStandardMaterial({
+
+            color:0xb58a30,
+
+            metalness:.7,
+
+            roughness:.3
+        });
+
+    const grip=
+        new THREE.MeshStandardMaterial({
+
+            color:0x4a2918,
+
+            roughness:.9
+        });
+
+    const blade=
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+                .075,
+                .075,
+                1.55
+            ),
+
+            metal
+        );
+
+    blade.position.z=-.78;
+
+    const guard=
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+                .42,
+                .06,
+                .08
+            ),
+
+            gold
+        );
+
+    guard.position.z=.02;
+
+    const handle=
+        new THREE.Mesh(
+
+            new THREE.CylinderGeometry(
+                .045,
+                .045,
+                .42,
+                8
+            ),
+
+            grip
+        );
+
+    handle.rotation.x=
+        Math.PI/2;
+
+    handle.position.z=.22;
+
+    const pommel=
+        new THREE.Mesh(
+
+            new THREE.SphereGeometry(
+                .07,
+                8,
+                8
+            ),
+
+            gold
+        );
+
+    pommel.position.z=.44;
+
+    group.add(
+        blade,
+        guard,
+        handle,
+        pommel
+    );
+
+    return group;
+}
+
+
+/* ============================================================
+   MODELO DA LANÇA
+============================================================ */
+
+function createSpear(){
+
+    const group=
+        new THREE.Group();
+
+    const wood=
+        new THREE.MeshStandardMaterial({
+
+            color:0x573719,
+
+            roughness:.9
+        });
+
+    const metal=
+        new THREE.MeshStandardMaterial({
+
+            color:0xbfc4c9,
+
+            metalness:.8,
+
+            roughness:.25
+        });
+
+    const shaft=
+        new THREE.Mesh(
+
+            new THREE.CylinderGeometry(
+                .035,
+                .035,
+                2.2,
+                8
+            ),
+
+            wood
+        );
+
+    shaft.rotation.x=
+        Math.PI/2;
+
+    shaft.position.z=-.9;
+
+    const tip=
+        new THREE.Mesh(
+
+            new THREE.ConeGeometry(
+                .12,
+                .42,
+                6
+            ),
+
+            metal
+        );
+
+    tip.rotation.x=
+        -Math.PI/2;
+
+    tip.position.z=-2.1;
+
+    group.add(
+        shaft,
+        tip
+    );
+
+    return group;
+}
+
+
+/* ============================================================
+   MODELO DO ARCO
+============================================================ */
+
+function createBow(){
+
+    const group=
+        new THREE.Group();
+
+    const wood=
+        new THREE.MeshStandardMaterial({
+
+            color:0x663d1d,
+
+            roughness:.8
+        });
+
+    const stringMat=
+        new THREE.MeshBasicMaterial({
+
+            color:0xe2d5ad
+        });
+
+    const curve=
+        new THREE.Mesh(
+
+            new THREE.TorusGeometry(
+                .45,
+                .035,
+                6,
+                20,
+                Math.PI
+            ),
+
+            wood
+        );
+
+    curve.rotation.z=
+        Math.PI/2;
+
+    group.add(curve);
+
+    const string=
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+                .015,
+                .015,
+                .9
+            ),
+
+            stringMat
+        );
+
+    string.rotation.y=
+        Math.PI/2;
+
+    group.add(string);
+
+    return group;
+}
+
+
+/* ============================================================
+   ESCUDO
+============================================================ */
+
+function createShield(
+    nation
+){
+
+    const data=
+        kingdoms[nation];
+
+    const group=
+        new THREE.Group();
+
+    const shieldMat=
+        new THREE.MeshStandardMaterial({
+
+            color:data.uniform,
+
+            roughness:.7,
+
+            metalness:.2
+        });
+
+    const shield=
+        new THREE.Mesh(
+
+            new THREE.CylinderGeometry(
+                .48,
+                .40,
+                .12,
+                8
+            ),
+
+            shieldMat
+        );
+
+    shield.rotation.x=
+        Math.PI/2;
+
+    shield.scale.y=1.3;
+
+    group.add(shield);
+
+    const emblem=
+        new THREE.Mesh(
+
+            new THREE.CircleGeometry(
+                .16,
+                16
+            ),
+
+            new THREE.MeshStandardMaterial({
+
+                color:data.accent,
+
+                metalness:.7,
+
+                roughness:.25
+            })
+        );
+
+    emblem.position.z=-.065;
+
+    emblem.rotation.x=
+        Math.PI;
+
+    group.add(emblem);
+
+    return group;
+}
+
+
+/* ============================================================
+   CAVALEIRO
+============================================================ */
+
+function createKnight(
+    nation,
+    enemy=true
+){
+
+    const data=
+        kingdoms[nation];
+
+    const knight=
+        new THREE.Group();
+
+    const armorMat=
+        new THREE.MeshStandardMaterial({
+
+            color:data.armor,
+
+            metalness:.65,
+
+            roughness:.38
+        });
+
+    const clothMat=
+        new THREE.MeshStandardMaterial({
+
+            color:data.uniform,
+
+            roughness:.85
+        });
+
+    const capeMat=
+        new THREE.MeshStandardMaterial({
+
+            color:data.cape,
+
+            roughness:.9
+        });
+
+    const skinMat=
+        new THREE.MeshStandardMaterial({
+
+            color:0xb98262,
+
+            roughness:.85
+        });
+
+    /* corpo */
+
+    const torso=
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+                .55,
+                .72,
+                .34
+            ),
+
+            armorMat
+        );
+
+    torso.position.y=.98;
+
+    /* cota / túnica */
+
+    const tunic=
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+                .58,
+                .42,
+                .38
+            ),
+
+            clothMat
+        );
+
+    tunic.position.y=.75;
+
+    /* cabeça */
+
+    const head=
+        new THREE.Mesh(
+
+            new THREE.SphereGeometry(
+                .18,
+                12,
+                10
+            ),
+
+            skinMat
+        );
+
+    head.position.y=1.48;
+
+    head.userData.hitZone='head';
+
+    /* elmo */
+
+    const helmet=
+        new THREE.Mesh(
+
+            new THREE.SphereGeometry(
+                .22,
+                12,
+                8,
+                0,
+                Math.PI*2,
+                0,
+                Math.PI/2
+            ),
+
+            armorMat
+        );
+
+    helmet.position.y=1.55;
+
+    /* viseira */
+
+    const visor=
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+                .30,
+                .07,
+                .06
+            ),
+
+            new THREE.MeshStandardMaterial({
+
+                color:0x242424,
+
+                metalness:.7,
+
+                roughness:.3
+            })
+        );
+
+    visor.position.set(
+        0,
+        1.51,
+        -.18
+    );
+
+    /* pernas */
+
+    const legR=
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+                .18,
+                .62,
+                .18
+            ),
+
+            armorMat
+        );
+
+    legR.position.set(
+        .15,
+        .30,
+        0
+    );
+
+    const legL=
+        legR.clone();
+
+    legL.position.x=-.15;
+
+    /* braços */
+
+    const armR=
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+                .14,
+                .52,
+                .14
+            ),
+
+            armorMat
+        );
+
+    armR.position.set(
+        .34,
+        1.0,
+        -.02
+    );
+
+    armR.rotation.x=-.5;
+
+    const armL=
+        armR.clone();
+
+    armL.position.x=-.34;
+
+    /* capa */
+
+    const cape=
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+                .62,
+                .85,
+                .05
+            ),
+
+            capeMat
+        );
+
+    cape.position.set(
+        0,
+        .95,
+        .25
+    );
+
+    /* arma */
+
+    const weapon=
+        createSword();
+
+    weapon.position.set(
+        .18,
+        .90,
+        -.42
+    );
+
+    weapon.scale.setScalar(.75);
+
+    /* escudo */
+
+    const shield=
+        createShield(nation);
+
+    shield.position.set(
+        -.38,
+        .95,
+        -.08
+    );
+
+    shield.rotation.y=
+        Math.PI/2;
+
+    shield.scale.setScalar(.7);
+
+    knight.add(
+        torso,
+        tunic,
+        head,
+        helmet,
+        visor,
+        legR,
+        legL,
+        armR,
+        armL,
+        cape,
+        weapon,
+        shield
+    );
+
+    knight.userData.nation=
+        nation;
+
+    knight.userData.nationName=
+        data.name;
+
+    knight.traverse(
+        obj=>{
+
+            if(obj.isMesh){
+
+                obj.castShadow=true;
+
+                obj.userData.knight=
+                    knight;
+            }
+        }
+    );
+
+    return knight;
+}
+
+
+/* ============================================================
+   BANDEIRA
+============================================================ */
+
+function createFlag(
+    nation,
+    position
+){
+
+    const data=
+        kingdoms[nation];
+
+    const group=
+        new THREE.Group();
+
+    const poleMat=
+        new THREE.MeshStandardMaterial({
+
+            color:0x5a3920,
+
+            roughness:1
+        });
+
+    const pole=
+        new THREE.Mesh(
+
+            new THREE.CylinderGeometry(
+                .035,
+                .035,
+                3.5,
+                8
+            ),
+
+            poleMat
+        );
+
+    pole.position.y=1.75;
+
+    const flagMat=
+        new THREE.MeshStandardMaterial({
+
+            color:data.flag1,
+
+            side:THREE.DoubleSide,
+
+            roughness:.8
+        });
+
+    const flag=
+        new THREE.Mesh(
+
+            new THREE.PlaneGeometry(
+                1.2,
+                .7
+            ),
+
+            flagMat
+        );
+
+    flag.position.set(
+        .6,
+        2.8,
+        0
+    );
+
+    flag.rotation.y=
+        Math.PI/2;
+
+    group.add(
+        pole,
+        flag
+    );
+
+    group.position.copy(
+        position
+    );
+
+    return group;
+}
+
+
+/* ============================================================
+   ENGINE
+============================================================ */
+
+function initEngine(){
+
+    const container=
+        document.getElementById(
+            'canvas-container'
+        );
+
+    container.innerHTML='';
+
+    scene=
+        new THREE.Scene();
+
+    camera=
+        new THREE.PerspectiveCamera(
+
+            70,
+
+            window.innerWidth/
+            window.innerHeight,
+
+            .1,
+
+            600
+        );
+
+    camera.position.set(
+        0,
+        1.7,
+        0
+    );
+
+    camera.rotation.order=
+        'YXZ';
+
+    renderer=
+        new THREE.WebGLRenderer({
+
+            antialias:true,
+
+            powerPreference:
+                'high-performance'
+        });
+
+    renderer.setSize(
+        window.innerWidth,
+        window.innerHeight
+    );
+
+    renderer.setPixelRatio(
+        Math.min(
+            window.devicePixelRatio,
+            1.5
+        )
+    );
+
+    renderer.shadowMap.enabled=true;
+
+    renderer.shadowMap.type=
+        THREE.PCFSoftShadowMap;
+
+    renderer.outputEncoding=
+        THREE.sRGBEncoding;
+
+    renderer.toneMapping=
+        THREE.ACESFilmicToneMapping;
+
+    renderer.toneMappingExposure=
+        1.1;
+
+    container.appendChild(
+        renderer.domElement
+    );
+
+    /* iluminação */
+
+    const hemi=
+        new THREE.HemisphereLight(
+            0xd5d7c1,
+            0x4a3524,
+            1.2
+        );
+
+    scene.add(hemi);
+
+    const sun=
+        new THREE.DirectionalLight(
+            0xffdf9c,
+            1.7
+        );
+
+    sun.position.set(
+        50,
+        80,
+        30
+    );
+
+    sun.castShadow=true;
+
+    sun.shadow.mapSize.width=1024;
+
+    sun.shadow.mapSize.height=1024;
+
+    scene.add(sun);
+
+    playerWeaponGroup=
+        new THREE.Group();
+
+    camera.add(
+        playerWeaponGroup
+    );
+
+    scene.add(camera);
+
+    updateFirstPersonWeapon();
+
+    window.addEventListener(
+        'resize',
+        onWindowResize
+    );
+
+    setupControls();
+}
+
+
+/* ============================================================
+   BIOMAS
+============================================================ */
+
+const biomes=[
+
+    {
+        name:'Planícies da França',
+        sky:0x8fa3a0,
+        ground:0x657049,
+        fog:0x8fa3a0,
+        density:.006
+    },
+
+    {
+        name:'Campos Ingleses',
+        sky:0x9aa69b,
+        ground:0x566044,
+        fog:0x9aa69b,
+        density:.007
+    },
+
+    {
+        name:'Terras Portuguesas',
+        sky:0xb4ad8c,
+        ground:0x776846,
+        fog:0xb4ad8c,
+        density:.005
+    },
+
+    {
+        name:'Planícies Espanholas',
+        sky:0xc5ae80,
+        ground:0x80633e,
+        fog:0xc5ae80,
+        density:.004
+    },
+
+    {
+        name:'Floresta Medieval',
+        sky:0x82988a,
+        ground:0x4e5e42,
+        fog:0x82988a,
+        density:.008
+    },
+
+    {
+        name:'Montanhas',
+        sky:0x8b969b,
+        ground:0x66675e,
+        fog:0x8b969b,
+        density:.007
+    }
+];
+
+function getBiome(){
+
+    return biomes[
+        (level-1)%
+        biomes.length
+    ];
+}
+
+
+/* ============================================================
+   ÁRVORES
+============================================================ */
+
+function createTree(){
+
+    const group=
+        new THREE.Group();
+
+    const trunk=
+        new THREE.Mesh(
+
+            new THREE.CylinderGeometry(
+                .12,
+                .18,
+                2.3,
+                8
+            ),
+
+            new THREE.MeshStandardMaterial({
+
+                color:0x563a23,
+
+                roughness:1
+            })
+        );
+
+    trunk.position.y=1.15;
+
+    const crown=
+        new THREE.Mesh(
+
+            new THREE.ConeGeometry(
+                .9,
+                2.3,
+                8
+            ),
+
+            new THREE.MeshStandardMaterial({
+
+                color:0x345333,
+
+                roughness:1
+            })
+        );
+
+    crown.position.y=2.65;
+
+    group.add(
+        trunk,
+        crown
+    );
+
+    group.traverse(
+        o=>{
+
+            if(o.isMesh)
+                o.castShadow=true;
+
+        }
+    );
+
+    return group;
+}
+
+
+/* ============================================================
+   PEDRAS
+============================================================ */
+
+function createRock(){
+
+    const rock=
+        new THREE.Mesh(
+
+            new THREE.DodecahedronGeometry(
+                .4+
+                Math.random()*.6,
+                0
+            ),
+
+            new THREE.MeshStandardMaterial({
+
+                color:0x66655c,
+
+                roughness:1
+            })
+        );
+
+    rock.scale.y=.6;
+
+    rock.castShadow=true;
+
+    return rock;
+}
+
+
+/* ============================================================
+   MURALHA
+============================================================ */
+
+function createWall(
+    x,
+    z
+){
+
+    const group=
+        new THREE.Group();
+
+    const stoneMat=
+        new THREE.MeshStandardMaterial({
+
+            color:0x77736a,
+
+            roughness:1
+        });
+
+    const wall=
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+                7,
+                3.5,
+                .7
+            ),
+
+            stoneMat
+        );
+
+    wall.position.y=1.75;
+
+    wall.castShadow=true;
+
+    group.add(wall);
+
+    for(let i=0;i<4;i++){
+
+        const merlon=
+            new THREE.Mesh(
+
+                new THREE.BoxGeometry(
+                    1,
+                    .7,
+                    .8
+                ),
+
+                stoneMat
+            );
+
+        merlon.position.set(
+            -2.6+i*1.7,
+            3.85,
+            0
+        );
+
+        group.add(
+            merlon
+        );
+    }
+
+    group.position.set(
+        x,
+        0,
+        z
+    );
+
+    return group;
+}
+
+
+/* ============================================================
+   CAMPO DE BATALHA
+============================================================ */
+
+function createBattlefield(){
+
+    scenery.forEach(
+        o=>scene.remove(o)
+    );
+
+    enemies.forEach(
+        e=>scene.remove(e.mesh)
+    );
+
+    projectiles.forEach(
+        p=>scene.remove(p.mesh)
+    );
+
+    particles.forEach(
+        p=>scene.remove(p.mesh)
+    );
+
+    scenery=[];
+    enemies=[];
+    projectiles=[];
+    particles=[];
+
+    camera.position.set(
+        0,
+        1.7,
+        25
+    );
+
+    camera.rotation.set(
+        0,
+        0,
+        0
+    );
+
+    const biome=
+        getBiome();
+
+    scene.background=
+        new THREE.Color(
+            biome.sky
+        );
+
+    scene.fog=
+        new THREE.FogExp2(
+            biome.fog,
+            biome.density
+        );
+
+    /* chão */
+
+    const floor=
+        new THREE.Mesh(
+
+            new THREE.PlaneGeometry(
+                220,
+                220
+            ),
+
+            new THREE.MeshStandardMaterial({
+
+                color:biome.ground,
+
+                roughness:1
+            })
+        );
+
+    floor.rotation.x=
+        -Math.PI/2;
+
+    floor.receiveShadow=true;
+
+    scene.add(floor);
+
+    scenery.push(floor);
+
+    /* árvores */
+
+    for(let i=0;i<60;i++){
+
+        const tree=
+            createTree();
+
+        tree.position.set(
+
+            (Math.random()-.5)*180,
+
+            0,
+
+            (Math.random()-.5)*180
+        );
+
+        tree.scale.setScalar(
+
+            .7+
+            Math.random()*.8
+        );
+
+        scene.add(tree);
+
+        scenery.push(tree);
+    }
+
+    /* pedras */
+
+    for(let i=0;i<45;i++){
+
+        const rock=
+            createRock();
+
+        rock.position.set(
+
+            (Math.random()-.5)*170,
+
+            .25,
+
+            (Math.random()-.5)*170
+        );
+
+        scene.add(rock);
+
+        scenery.push(rock);
+    }
+
+    /* muralhas */
+
+    for(let i=0;i<6;i++){
+
+        const wall=
+            createWall(
+
+                (Math.random()-.5)*100,
+
+                -40-
+                Math.random()*70
+            );
+
+        scene.add(wall);
+
+        scenery.push(wall);
+    }
+
+    /* bandeiras */
+
+    const playerFlag=
+        createFlag(
+
+            player.nation,
+
+            new THREE.Vector3(
+                -8,
+                0,
+                10
+            )
+        );
+
+    scene.add(playerFlag);
+
+    scenery.push(playerFlag);
+
+    /* inimigos */
+
+    spawnEnemies();
+
+    updateHUD();
+
+    showMessage(
+
+        `BATALHA ${level}: ${biome.name}`,
+
+        '#e2c15c'
+    );
+}
+
+
+/* ============================================================
+   INIMIGOS
+============================================================ */
+
+function getEnemyKingdom(){
+
+    const available=
+        Object.keys(
+            kingdoms
+        ).filter(
+            n=>n!==player.nation
+        );
+
+    /*
+       Alterna os adversários.
+    */
+
+    return available[
+        (level-1)%
+        available.length
+    ];
+}
+
+function spawnEnemies(){
+
+    const enemyNation=
+        getEnemyKingdom();
+
+    const count=
+        Math.min(
+            5+
+            level*2,
+            22
+        );
+
+    for(let i=0;i<count;i++){
+
+        const mesh=
+            createKnight(
+                enemyNation,
+                true
+            );
+
+        mesh.position.set(
+
+            (Math.random()-.5)*80,
+
+            0,
+
+            -20-
+            Math.random()*100
+        );
+
+        scene.add(mesh);
+
+        enemies.push({
+
+            mesh,
+
+            nation:enemyNation,
+
+            health:
+                100+
+                level*8,
+
+            speed:
+                .65+
+                Math.random()*.45,
+
+            attackDelay:
+                900+
+                Math.random()*900,
+
+            lastAttack:0,
+
+            aggression:
+                .6+
+                Math.random()*.4
+        });
+    }
+
+    showMessage(
+
+        `${kingdoms[enemyNation].name}: ${count} CAVALEIROS`,
+
+        '#f28b63'
+    );
+}
+
+
+/* ============================================================
+   ARMA EM PRIMEIRA PESSOA
+============================================================ */
+
+function updateFirstPersonWeapon(){
+
+    while(
+        playerWeaponGroup.children.length
+    ){
+
+        playerWeaponGroup.remove(
+            playerWeaponGroup.children[0]
+        );
+    }
+
+    let weapon;
+
+    if(player.weapon===1){
+
+        weapon=
+            createSword();
+
+        weapon.position.set(
+            .32,
+            -.25,
+            -.55
+        );
+
+        weapon.rotation.y=
+            -.2;
+
+    }else if(player.weapon===2){
+
+        weapon=
+            createSpear();
+
+        weapon.position.set(
+            .30,
+            -.28,
+            -.55
+        );
+
+        weapon.scale.setScalar(.65);
+
+    }else{
+
+        weapon=
+            createBow();
+
+        weapon.position.set(
+            .38,
+            -.22,
+            -.52
+        );
+
+        weapon.scale.setScalar(.9);
+    }
+
+    playerWeaponGroup.add(
+        weapon
+    );
+}
+
+
+/* ============================================================
+   ATAQUE
+============================================================ */
+
+function attack(
+    strong=false
+){
+
+    if(!isGameRunning)
+        return;
+
+    const weapon=
+        weapons[player.weapon];
+
+    const now=
+        performance.now();
+
+    if(
+        now-
+        player.lastAttack<
+        weapon.cooldown
+    )
+        return;
+
+    if(
+        player.stamina<
+        weapon.stamina
+    ){
+
+        showMessage(
+            'SEM STAMINA',
+            '#ff7777'
+        );
+
+        return;
+    }
+
+    player.lastAttack=now;
+
+    player.stamina-=
+        weapon.stamina;
+
+    player.attacking=true;
+
+    recoil+=
+        strong
+        ?.10
+        :.04;
+
+    if(weapon.projectile){
+
+        if(player.arrows<=0){
+
+            showMessage(
+                'SEM FLECHAS',
+                '#ff7777'
+            );
+
+            player.attacking=false;
+
+            return;
+        }
+
+        player.arrows--;
+
+        fireArrow(
+            strong
+        );
+
+        sound('bow');
+
+    }else{
+
+        meleeAttack(
+            strong
+        );
+
+        sound('sword');
+    }
+
+    setTimeout(
+        ()=>{
+            player.attacking=false;
+        },
+        180
+    );
+
+    updateHUD();
+}
+
+
+/* ============================================================
+   ATAQUE CORPO A CORPO
+============================================================ */
+
+function meleeAttack(
+    strong
+){
+
+    const weapon=
+        weapons[player.weapon];
+
+    const raycaster=
+        new THREE.Raycaster();
+
+    raycaster.setFromCamera(
+
+        new THREE.Vector2(
+            0,
+            0
+        ),
+
+        camera
+    );
+
+    let target=null;
+
+    let nearest=
+        Infinity;
+
+    for(
+        const enemy of enemies
+    ){
+
+        const hits=
+            raycaster.intersectObject(
+                enemy.mesh,
+                true
+            );
+
+        if(
+            hits.length&&
+            hits[0].distance<
+            weapon.range&&
+            hits[0].distance<
+            nearest
+        ){
+
+            target={
+                enemy,
+                hit:hits[0]
+            };
+
+            nearest=
+                hits[0].distance;
+        }
+    }
+
+    if(!target)
+        return;
+
+    let damage=
+        strong
+        ?weapon.strongDamage
+        :weapon.damage;
+
+    if(
+        target.hit.object.userData.hitZone===
+        'head'
+    ){
+
+        damage*=1.7;
+    }
+
+    target.enemy.health-=
+        damage;
+
+    createHitEffect(
+        target.hit.point
+    );
+
+    if(
+        target.enemy.health<=0
+    ){
+
+        killEnemy(
+            target.enemy
+        );
+    }
+}
+
+
+/* ============================================================
+   FLECHA
+============================================================ */
+
+function fireArrow(
+    strong
+){
+
+    const direction=
+        new THREE.Vector3();
+
+    camera.getWorldDirection(
+        direction
+    );
+
+    const arrow=
+        new THREE.Mesh(
+
+            new THREE.CylinderGeometry(
+                .018,
+                .018,
+                1.1,
+                6
+            ),
+
+            new THREE.MeshStandardMaterial({
+
+                color:0x6c411d,
+
+                roughness:.8
+            })
+        );
+
+    arrow.rotation.x=
+        Math.PI/2;
+
+    arrow.position.copy(
+        camera.position
+    );
+
+    arrow.position.add(
+        direction.clone()
+        .multiplyScalar(.8)
+    );
+
+    scene.add(arrow);
+
+    const velocity=
+        direction
+        .multiplyScalar(
+            strong
+            ?65
+            :55
+        );
+
+    projectiles.push({
+
+        mesh:arrow,
+
+        velocity,
+
+        damage:
+            strong
+            ?weapons[3].strongDamage
+            :weapons[3].damage,
+
+        life:2.2
+    });
+}
+
+
+/* ============================================================
+   PROJÉTEIS
+============================================================ */
+
+function updateProjectiles(
+    delta
+){
+
+    for(
+        let i=
+            projectiles.length-1;
+        i>=0;
+        i--
+    ){
+
+        const p=
+            projectiles[i];
+
+        p.mesh.position.addScaledVector(
+            p.velocity,
+            delta
+        );
+
+        p.mesh.lookAt(
+            p.mesh.position.clone()
+            .add(p.velocity)
+        );
+
+        p.life-=delta;
+
+        let hitEnemy=null;
+
+        for(
+            const enemy of enemies
+        ){
+
+            if(
+                enemy.mesh.position.distanceTo(
+                    p.mesh.position
+                )<
+                1.15
+            ){
+
+                hitEnemy=enemy;
+
+                break;
+            }
+        }
+
+        if(hitEnemy){
+
+            hitEnemy.health-=
+                p.damage;
+
+            createHitEffect(
+                p.mesh.position
+            );
+
+            if(
+                hitEnemy.health<=0
+            ){
+
+                killEnemy(
+                    hitEnemy
+                );
+            }
+
+            scene.remove(
+                p.mesh
+            );
+
+            projectiles.splice(
+                i,
+                1
+            );
+
+            continue;
+        }
+
+        if(
+            p.life<=0||
+            p.mesh.position.y<0
+        ){
+
+            scene.remove(
+                p.mesh
+            );
+
+            projectiles.splice(
+                i,
+                1
+            );
+        }
+    }
+}
+
+
+/* ============================================================
+   DANO AO JOGADOR
+============================================================ */
+
+function applyDamage(
+    amount
+){
+
+    if(!isGameRunning)
+        return;
+
+    /*
+       Escudo absorve primeiro.
+    */
+
+    if(player.shield>0){
+
+        player.shield-=amount;
+
+        if(player.shield<0){
+
+            player.health+=
+                player.shield;
+
+            player.shield=0;
+        }
+
+        sound('shield');
+
+    }else{
+
+        player.health-=amount;
+
+        sound('hit');
+    }
+
+    if(
+        player.health<=0
+    ){
+
+        player.health=0;
+
+        endGame(false);
+
+        return;
+    }
+
+    updateHUD();
+}
+
+
+/* ============================================================
+   IA DOS CAVALEIROS
+============================================================ */
+
+function enemyAttack(
+    enemy
+){
+
+    const now=
+        performance.now();
+
+    if(
+        now-
+        enemy.lastAttack<
+        enemy.attackDelay
+    )
+        return;
+
+    enemy.lastAttack=now;
+
+    /*
+       Pequena chance de erro.
+    */
+
+    if(
+        Math.random()<
+        .22
+    ){
+
+        createHitEffect(
+            camera.position
+        );
+
+        return;
+    }
+
+    let damage=
+        6+
+        level*.7;
+
+    if(
+        Math.random()<.15
+    ){
+
+        damage*=1.8;
+
+        showMessage(
+            'ATAQUE CRÍTICO!',
+            '#ff6464'
+        );
+    }
+
+    applyDamage(
+        damage
+    );
+}
+
+function updateEnemies(
+    delta
+){
+
+    for(
+        const enemy of enemies
+    ){
+
+        const pos=
+            enemy.mesh.position;
+
+        const target=
+            camera.position;
+
+        const direction=
+            new THREE.Vector3();
+
+        direction.subVectors(
+            target,
+            pos
+        );
+
+        direction.y=0;
+
+        const distance=
+            direction.length();
+
+        if(distance>0)
+            direction.normalize();
+
+        enemy.mesh.lookAt(
+
+            target.x,
+
+            enemy.mesh.position.y,
+
+            target.z
+        );
+
+        if(
+            distance<3.3
+        ){
+
+            enemyAttack(
+                enemy
+            );
+
+        }else{
+
+            /*
+               Movimento em direção ao jogador.
+            */
+
+            const speed=
+                enemy.speed*
+                (
+                    1+
+                    level*.025
+                );
+
+            enemy.mesh.position.addScaledVector(
+
+                direction,
+
+                speed*delta
+            );
+        }
+    }
+}
+
+
+/* ============================================================
+   MORTE
+============================================================ */
+
+function killEnemy(
+    enemy
+){
+
+    if(
+        !enemies.includes(enemy)
+    )
+        return;
+
+    scene.remove(
+        enemy.mesh
+    );
+
+    const index=
+        enemies.indexOf(enemy);
+
+    if(index>=0){
+
+        enemies.splice(
+            index,
+            1
+        );
+    }
+
+    createDeathEffect(
+        enemy.mesh.position
+    );
+
+    sound('death');
+
+    showMessage(
+        'CAVALEIRO INIMIGO DERROTADO',
+        '#82dd83'
+    );
+
+    updateHUD();
+
+    if(
+        enemies.length===0
+    ){
+
+        setTimeout(
+            nextLevel,
+            1400
+        );
+    }
+}
+
+
+/* ============================================================
+   EFEITO DE IMPACTO
+============================================================ */
+
+function createHitEffect(
+    position
+){
+
+    for(
+        let i=0;
+        i<7;
+        i++
+    ){
+
+        const mesh=
+            new THREE.Mesh(
+
+                new THREE.SphereGeometry(
+                    .035,
+                    5,
+                    5
+                ),
+
+                new THREE.MeshBasicMaterial({
+
+                    color:
+                        i%2
+                        ?0xc8a23e
+                        :0x781515
+                })
+            );
+
+        mesh.position.copy(
+            position
+        );
+
+        mesh.userData.velocity=
+            new THREE.Vector3(
+
+                (Math.random()-.5)*.12,
+
+                Math.random()*.12,
+
+                (Math.random()-.5)*.12
+            );
+
+        scene.add(mesh);
+
+        particles.push({
+
+            mesh,
+
+            life:.45
+        });
+    }
+}
+
+
+/* ============================================================
+   EFEITO DE MORTE
+============================================================ */
+
+function createDeathEffect(
+    position
+){
+
+    for(
+        let i=0;
+        i<12;
+        i++
+    ){
+
+        const mesh=
+            new THREE.Mesh(
+
+                new THREE.SphereGeometry(
+                    .045,
+                    5,
+                    5
+                ),
+
+                new THREE.MeshBasicMaterial({
+
+                    color:
+                        i%2
+                        ?0x8d1717
+                        :0xb78c32
+                })
+            );
+
+        mesh.position.copy(
+            position
+        );
+
+        mesh.userData.velocity=
+            new THREE.Vector3(
+
+                (Math.random()-.5)*.18,
+
+                Math.random()*.2,
+
+                (Math.random()-.5)*.18
+            );
+
+        scene.add(mesh);
+
+        particles.push({
+
+            mesh,
+
+            life:.8
+        });
+    }
+}
+
+
+/* ============================================================
+   PARTÍCULAS
+============================================================ */
+
+function updateParticles(
+    delta
+){
+
+    for(
+        let i=
+            particles.length-1;
+        i>=0;
+        i--
+    ){
+
+        const p=
+            particles[i];
+
+        p.mesh.position.addScaledVector(
+
+            p.mesh.userData.velocity,
+
+            delta*60
+        );
+
+        p.mesh.userData.velocity.y-=
+            5*delta;
+
+        p.life-=delta;
+
+        if(
+            p.life<=0
+        ){
+
+            scene.remove(
+                p.mesh
+            );
+
+            particles.splice(
+                i,
+                1
+            );
+        }
+    }
+}
+
+
+/* ============================================================
+   STAMINA
+============================================================ */
+
+function updateStamina(
+    delta
+){
+
+    if(
+        keys.shift&&
+        player.stamina>0
+    ){
+
+        player.stamina-=
+            30*delta;
+
+    }else{
+
+        player.stamina+=
+            18*delta;
+    }
+
+    player.stamina=
+        THREE.MathUtils.clamp(
+
+            player.stamina,
+
+            0,
+
+            100
+        );
+}
+
+
+/* ============================================================
+   MOVIMENTO
+============================================================ */
+
+function updateMovement(
+    delta
+){
+
+    const move=
+        new THREE.Vector3();
+
+    if(keys.w)
+        move.z-=1;
+
+    if(keys.s)
+        move.z+=1;
+
+    if(keys.a)
+        move.x-=1;
+
+    if(keys.d)
+        move.x+=1;
+
+    if(
+        joystickMove.x||
+        joystickMove.y
+    ){
+
+        move.x=
+            joystickMove.x;
+
+        move.z=
+            joystickMove.y;
+    }
+
+    if(
+        move.length()>0
+    ){
+
+        move.normalize();
+
+        move.applyEuler(
+
+            new THREE.Euler(
+                0,
+                camera.rotation.y,
+                0
+            )
+        );
+
+        let speed=3.2;
+
+        if(
+            keys.shift&&
+            player.stamina>0
+        ){
+
+            speed=5.5;
+        }
+
+        camera.position.addScaledVector(
+
+            move,
+
+            speed*delta
+        );
+
+        weaponBob+=
+            delta*9;
+
+        camera.position.y=
+            1.7+
+            Math.sin(
+                weaponBob
+            )*.025;
+
+        playerWeaponGroup.rotation.x=
+            Math.sin(
+                weaponBob
+            )*.02;
+
+    }else{
+
+        camera.position.y=1.7;
+
+        playerWeaponGroup.rotation.x*=.9;
+    }
+}
+
+
+/* ============================================================
+   LOOP
+============================================================ */
+
+function animate(
+    time=performance.now()
+){
+
+    if(!isGameRunning)
+        return;
+
+    requestAnimationFrame(
+        animate
+    );
+
+    const delta=
+        Math.min(
+
+            .05,
+
+            (time-lastTime)/1000
+        );
+
+    lastTime=time;
+
+    updateMovement(
+        delta
+    );
+
+    updateStamina(
+        delta
+    );
+
+    updateEnemies(
+        delta
+    );
+
+    updateProject
